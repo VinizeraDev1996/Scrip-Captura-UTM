@@ -1,0 +1,48 @@
+<script>
+// Aguarda o carregamento completo do DOM
+document.addEventListener('DOMContentLoaded', function() {
+  // Selecione o formulário do Elementor. Ajuste o seletor se necessário.
+  var form = document.querySelector('form.elementor-form');
+
+  if (form) {
+    // Ao submeter o formulário...
+    form.addEventListener('submit', function(event) {
+      // Cria um objeto FormData para coletar todos os inputs do formulário,
+      // inclusive os campos ocultos onde as UTMs foram inseridas.
+      var formData = new FormData(form);
+      var data = {};
+
+      // Converte os dados do formulário para um objeto JSON
+      formData.forEach(function(value, key) {
+        data[key] = value;
+      });
+
+      // Substitua pela URL do seu webhook
+      var webhookURL = 'https://seu-webhook-url.com/endpoint';
+      // Prepara o payload em formato JSON
+      var payload = JSON.stringify(data);
+
+      // Para não interferir no comportamento padrão (redirecionamento ou envio AJAX do Elementor),
+      // enviamos os dados de forma assíncrona.
+      if (navigator.sendBeacon) {
+        // navigator.sendBeacon é ideal para enviar dados mesmo se ocorrer um redirecionamento imediato
+        var blob = new Blob([payload], { type: 'application/json' });
+        navigator.sendBeacon(webhookURL, blob);
+      } else {
+        // Fallback: fetch com opção keepalive para permitir o envio mesmo durante o unload
+        fetch(webhookURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true
+        }).catch(function(error) {
+          console.error('Erro ao enviar webhook via fetch:', error);
+        });
+      }
+      // O redirecionamento ou processamento padrão do formulário continua normalmente.
+    });
+  } else {
+    console.warn('Formulário do Elementor não encontrado. Verifique se o seletor está correto.');
+  }
+});
+</script>
